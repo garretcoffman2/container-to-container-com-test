@@ -1,4 +1,4 @@
-name: Docker Network Example
+name: Run Multiple Containers
 
 on: [push]
 
@@ -6,40 +6,14 @@ jobs:
   run-containers:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
-
-      - name: Create Docker network
-        run: docker network create my_network
-
-      - name: Generate Docker Compose file
+      - name: Set up Docker Network
         run: |
-          echo 'version: "3.8"
-          services:
-            apache:
-              image: httpd:latest
-              networks:
-                - my_network
-            another:
-              image: curlimages/curl:latest
-              networks:
-                - my_network
-          networks:
-            my_network:
-              driver: bridge' > docker-compose.yml
+          docker network create my-network
 
-      - name: Run Docker Compose
-        run: docker-compose up -d
-
-      - name: Check connection to Apache container
+      - name: Run Apache Server Container
         run: |
-          curl -I http://apache:80
+          docker run -d --name apache-server --network my-network httpd:latest
 
-      - name: Check connection to Another container
+      - name: Run Curl Container
         run: |
-          curl -I http://another:some-port
-
-      - name: Clean up Docker Compose
-        run: |
-          docker-compose down
-          docker network rm my_network
+          docker run --rm --network my-network curlimages/curl:latest curl -I http://apache-server

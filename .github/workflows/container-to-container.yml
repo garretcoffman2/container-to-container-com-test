@@ -1,43 +1,45 @@
-name: Create two containers and communicate via curl.
+name: Docker Network Example
 
 on: [push]
 
 jobs:
-  setup:
+  run-containers:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v2
 
       - name: Create Docker network
         run: docker network create my_network
 
-      - name: Run Apache container
-        id: run-apache
+      - name: Generate Docker Compose file
         run: |
-          docker run -d --network my_network --name apache-container httpd:latest
-          echo "Apache container is running on network my_network"
+          echo 'version: "3.8"
+          services:
+            apache:
+              image: httpd:latest
+              networks:
+                - my_network
+            another:
+              image: curlimages/curl:latest
+              networks:
+                - my_network
+          networks:
+            my_network:
+              driver: bridge' > docker-compose.yml
 
-      - name: Check container health
-        id: check-health
-        run: |
-          for i in {1..10}; do
-            if curl -s -o /dev/null -w "%{http_code}" http://apache-container:80 | grep -q "200"; then
-              echo "Container is ready!"
-              exit 0
-            else
-              echo "Waiting for container to be ready..."
-              sleep 10
-            fi
-          done
-          echo "Container did not become ready in time."
-          exit 1
-
-    steps:
-      - name: Install curl
-        run: sudo apt-get install -y curl
+      - name: Run Docker Compose
+        run: docker-compose up -d
 
       - name: Check connection to Apache container
         run: |
-          curl -I http://apache-container:80
+          curl -I http://apache:80
 
+      - name: Check connection to Another container
+        run: |
+          curl -I http://another:some-port
+
+      - name: Clean up Docker Compose
+        run: |
+          docker-compose down
+          docker network rm my_network

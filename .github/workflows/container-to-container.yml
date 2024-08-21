@@ -12,8 +12,6 @@ jobs:
       - name: Create Docker network
         run: docker network create my_network
 
-  run-apache-container:
-    runs-on: ubuntu-latest
     needs: setup
     steps:
       - name: Run Apache container

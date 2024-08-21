@@ -1,26 +1,20 @@
-name: Example Workflow
+name: Create two containers and communicate via curl.
 
 on: [push]
 
 jobs:
   start-container:
     runs-on: ubuntu-latest
-    outputs:
-      container-url: ${{ steps.get-url.outputs.container-url }}
     steps:
       - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Run Apache container
         id: run-container
         run: |
           docker network create my_network
           docker run -d --network my_network --name apache-container httpd:latest
-          echo "Apache container is running on network my_network"
-
-      - name: Get container URL
-        id: get-url
-        run: echo "::set-output name=container-url::http://apache-container:80"
+          echo "Apache container is running."
 
       - name: Check container health
         id: check-health
@@ -47,7 +41,7 @@ jobs:
 
       - name: Run curl command
         run: |
-          curl -X GET $CONTAINER_URL
+          curl -X GET http://apache-container:80
 
   stop-container:
     runs-on: ubuntu-latest

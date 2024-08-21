@@ -1,4 +1,4 @@
-name: Run Multiple Containers
+name: Docker Container Communication
 
 on: [push]
 
@@ -10,10 +10,18 @@ jobs:
         run: |
           docker network create my-network
 
+      - name: Create Hello World HTML File
+        run: |
+          echo "<html><body><h1>Hello World!</h1></body></html>" > hello.html
+
       - name: Run Apache Server Container
         run: |
-          docker run -d --name apache-server --network my-network httpd:latest
+          docker run -d --name apache-server --network my-network -v $(pwd)/hello.html:/usr/local/apache2/htdocs/index.html httpd:latest
 
       - name: Run Curl Container
         run: |
           docker run --rm --network my-network curlimages/curl:latest curl -I http://apache-server
+          
+      - name: Display Hello World! Page
+        run: |
+          docker run --rm --network my-network curlimages/curl:latest curl http://apache-server

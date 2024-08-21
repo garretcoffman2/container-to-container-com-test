@@ -9,13 +9,23 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v3
 
-      - name: Run Apache container
-        id: run-container
-        run: |
-          docker network create my_network
-          docker run -d --network my_network --name apache-container httpd:latest
-          echo "Apache container is running."
+      - name: Create Docker network
+        run: docker network create my_network
 
+  run-apache-container:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Run Apache container
+        id: run-apache
+        run: |
+          docker run -d --network my_network --name apache-container httpd:latest
+          echo "Apache container is running on network my_network"
+
+  check-health-of-apache:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
       - name: Check container health
         id: check-health
         run: |
@@ -31,24 +41,13 @@ jobs:
           echo "Container did not become ready in time."
           exit 1
 
-  curl-command:
+  check-connection:
     runs-on: ubuntu-latest
-    needs: check-health
     steps:
-
       - name: Install curl
         run: sudo apt-get install -y curl
 
-      - name: Run curl command
+      - name: Check connection to Apache container
         run: |
-          curl -X GET http://apache-container:80
+          curl -I http://apache-container:80
 
-  stop-container:
-    runs-on: ubuntu-latest
-    needs: curl-command
-    steps:
-      - name: Stop and remove Docker container
-        run: |
-          docker stop apache-container
-          docker rm apache-container
-          docker network rm my_network

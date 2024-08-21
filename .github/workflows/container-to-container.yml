@@ -12,7 +12,6 @@ jobs:
       - name: Create Docker network
         run: docker network create my_network
 
-    needs: setup
     steps:
       - name: Run Apache container
         id: run-apache
